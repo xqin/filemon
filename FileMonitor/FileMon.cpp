@@ -21,6 +21,7 @@
 #include <pthread.h>
 #include <pwd.h>        // for getpwuid(3)
 #include <stdio.h>
+#include <time.h>       // for strftime
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -32,6 +33,7 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <ctime>
 #include <list>
 #include <sstream>
 #include <set>
@@ -274,6 +276,23 @@ std::string getUserName(uid_t uid)
 }
 
 //-----------------------------------------------------------------------------
+// Get the user name for a UID.
+
+std::string getTimestamp()
+{
+    char buffer[256];
+    struct tm * timeinfo;
+
+    std::time_t result = std::time(nullptr);
+    timeinfo = std::localtime(&result);
+
+    strftime(buffer, sizeof(buffer), "%F %T", timeinfo);
+
+    return std::string(buffer);
+}
+
+
+//-----------------------------------------------------------------------------
 // Print this programs help info.
 
 static void printUsage()
@@ -465,7 +484,7 @@ static void processEventTerse(char * buf, size_t size)
 
         pid_t pid = *((pid_t *) (buf + pos));
         pos += sizeof(pid_t);
-        
+
         std::string processName = getProcessName(pid);
 
         while (true) {
@@ -500,13 +519,13 @@ static void processEventTerse(char * buf, size_t size)
             if (events[i].printRequired_m) {
                 switch (events[i].type_m) {
                     case ADD:
-                        printf("ADD:%s - pid %d (%s)\n", events[i].path_m, pid, processName.c_str());
+                        printf("[%s] ADD:%s - pid %d (%s)\n", getTimestamp().c_str(), events[i].path_m, pid, processName.c_str());
                         break;
                     case DELETE:
-                        printf("DEL:%s - pid %d (%s)\n", events[i].path_m, pid, processName.c_str());
+                        printf("[%s] DEL:%s - pid %d (%s)\n", getTimestamp().c_str(), events[i].path_m, pid, processName.c_str());
                         break;
                     case CHANGE:
-                        printf("CHG:%s - pid %d (%s)\n", events[i].path_m, pid, processName.c_str());
+                        printf("[%s] CHG:%s - pid %d (%s)\n", getTimestamp().c_str(), events[i].path_m, pid, processName.c_str());
                         break;
                     default:
                         break;
